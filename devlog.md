@@ -119,3 +119,55 @@ Logger is done. It was straightforward. Only thing I had to think about was the 
 
 Next session: implement `encryption.py` with the Vigenère cipher.
 
+---
+
+## 2025-03-02 13:45
+
+### Thoughts So Far
+
+The Vigenère cipher has been in my head since yesterday. I kept thinking about whether to handle non-letter characters or just reject them. The spec says "The Vigenère cypher only works on letters" and "you may assume that it always receive input in uppercase." So the encryption program itself can assume valid letter-only uppercase input — the driver handles validation before sending anything.
+
+### Plan for This Session
+
+Implement `encryption.py`:
+1. Read commands from stdin in a loop.
+2. Parse command and argument.
+3. Implement `PASSKEY`, `ENCRYPT`, `DECRYPT`, `QUIT` handling.
+4. Implement Vigenère encrypt and decrypt functions.
+5. Test manually using the example from the spec: `PASSKEY HELLO`, then `ENCRYPT HELLO` → `OIWWC`.
+
+### Coding Notes
+
+The Vigenère cipher formulas:
+- Encrypt: `C_i = (P_i + K_i) mod 26`
+- Decrypt: `P_i = (C_i - K_i + 26) mod 26`
+  - The `+26` is needed because Python's `%` operator can return negative values for negative operands in some edge cases. Adding 26 ensures we always stay in [0, 25].
+
+I convert letters to 0-25 by doing `ord(ch) - ord('A')` and back with `chr(x + ord('A'))`.
+
+The key repeats — `key[key_idx % len(key)]` handles the cycling.
+
+**Important:** I only increment `key_idx` when the character is a letter. For non-letters, I would just pass them through unchanged. This way the key position stays aligned with the letters.
+
+Tested with the spec example:
+```
+echo -e "ENCRYPT HELLO\nPASSKEY HELLO\nENCRYPT HELLO\nDECRYPT OIWWC\nQUIT" | python3 encryption.py
+```
+Output:
+```
+ERROR Password not set
+RESULT
+RESULT OIWWC
+RESULT HELLO
+```
+
+All correct! ✓
+
+Also made sure `sys.stdout.flush()` is called after every print, otherwise the driver would block forever waiting for a response that is sitting in a buffer.
+
+### End-of-Session Reflection
+
+Encryption program is done. The cipher math was not bad once I worked through the formula. The main gotcha is flushing stdout.
+
+Next session: start the driver program. This will be the hardest part — launching subprocesses with `subprocess.Popen`, connecting the pipes, and building the interactive menu.
+
