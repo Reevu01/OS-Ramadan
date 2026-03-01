@@ -232,3 +232,75 @@ Got the skeleton of the driver running. The subprocess setup was easier than I e
 
 Next session: full end-to-end testing of the driver.
 
+---
+
+## 2025-03-06 11:00
+
+### Thoughts So Far
+
+Excited to run the full pipeline today. I have all three programs written — just need to make sure they all work together.
+
+### Plan for This Session
+
+Run an end-to-end test:
+1. Start the driver with a log file.
+2. Set a password (`SECRET`).
+3. Encrypt a word (`HELLO`).
+4. Decrypt the result (`ZINCS`) to verify I get `HELLO` back.
+5. Use the history menu to pick a string for a second operation.
+6. Check the log file.
+
+### Coding Notes
+
+**Test 1 — Basic round-trip encrypt/decrypt:**
+```
+password → SECRET
+encrypt  → HELLO  → ZINCS
+decrypt  → ZINCS  → HELLO
+```
+Result: ✓ Works perfectly.
+
+**Test 2 — Invalid input rejection:**
+Tried encrypting `Hello World!` (has a space). Got:
+`Error: Input must contain only letters (no spaces or special characters).`
+The error was also logged as `[ERROR] Invalid input for encryption.` ✓
+
+**Test 3 — History menu:**
+After encrypting `HELLO` (gets `ZINCS`), history = `["HELLO", "ZINCS"]`.
+On next encrypt, the prompt offers `h` or `n`. Chose `h`, then picked `1` (HELLO).
+Correctly encrypted HELLO again without me re-typing it. ✓
+
+**Test 4 — Password NOT in history:**
+Set password to `SECRET`. Ran `history` command — `SECRET` never appears in the list. ✓
+
+**Vigenère math sanity check:**
+`HELLO` + key `SECRET`:
+- H(7) + S(18) = 25 = Z ✓
+- E(4) + E(4) = 8 = I ✓  
+- L(11) + C(2) = 13 = N ✓
+- L(11) + R(17) = 28%26 = 2 = C ✓
+- O(14) + E(4) = 18 = S ✓
+→ `ZINCS` ✓
+
+**Sample log file produced:**
+```
+2025-03-06 11:18 [START] Driver started.
+2025-03-06 11:18 [PASSWORD] User setting password.
+2025-03-06 11:18 [PASSKEY] Password updated.
+2025-03-06 11:18 [ENCRYPT] User requested encryption.
+2025-03-06 11:18 [RESULT] RESULT ZINCS
+2025-03-06 11:18 [DECRYPT] User requested decryption.
+2025-03-06 11:18 [RESULT] RESULT HELLO
+2025-03-06 11:18 [HISTORY] User viewing history.
+2025-03-06 11:18 [QUIT] Driver exiting.
+```
+Note: `SECRET` never appears in the log. The spec says "Passwords are never directly logged." ✓
+
+### End-to-Session Reflection
+
+Everything is working! The main thing I noticed is that the test input has to be carefully structured for the piped test because stdin is shared between the command prompts and the sub-prompts (history choice, etc.). In a real terminal this is seamless because the user sees each prompt.
+
+One thing I want to double-check next session: what happens if the user tries to encrypt/decrypt without setting a password first? The encryption program returns `ERROR Password not set`. The driver just displays `Result: ERROR Password not set`. That is acceptable behavior — the spec says the encryption program should output an error in that case.
+
+Next session: minor polish and edge-case testing.
+
