@@ -360,3 +360,72 @@ All edge cases pass. The code is solid. Next session I will write the README and
 
 Next session: write README.md, final devlog entry, double-check everything.
 
+---
+
+## 2025-03-10 09:15
+
+### Thoughts So Far
+
+Due date is March 13th. I have three days, but I want to be done today so I am not rushing. Everything is working. Just need to write the README and do one last review.
+
+### Plan for This Session
+
+1. Write `README.md` — describe the files, how to run from the command line, notes for the TA.
+2. Do a final read-through of all three Python files.
+3. Run one last complete test.
+4. Write this closing devlog entry.
+
+### Coding Notes
+
+**Final read-through of all files:**
+
+`logger.py`:
+- Opens log file in append mode. ✓
+- Reads lines until `QUIT`. ✓
+- Parses `ACTION message`, writes `YYYY-MM-DD HH:MM [ACTION] MESSAGE`. ✓
+- Flushes after each write. ✓
+
+`encryption.py`:
+- Handles `PASSKEY`, `ENCRYPT`, `DECRYPT`, `QUIT`. ✓
+- `ENCRYPT`/`DECRYPT` return `ERROR Password not set` if no passkey. ✓
+- Vigenère cipher verified against the spec example (HELLO + HELLO = OIWWC). ✓
+- Flushes stdout after every response. ✓
+
+`driver.py`:
+- Launches both child processes with correct pipes. ✓
+- Logs `START` on startup, `QUIT` on exit. ✓
+- `password`: validates letters only, sends `PASSKEY` to encryption program. NOT logged, NOT stored in history. ✓
+- `encrypt`: validates letters only, stores new input and result in history. ✓
+- `decrypt`: validates letters only, stores new input and result in history. ✓
+- `history`: displays all items. ✓
+- `quit`: sends `QUIT` to both children, waits for them to terminate, then exits. ✓
+- `EOFError` on input (e.g., piped input runs out) triggers a clean `quit`. ✓
+
+**Final test run:**
+```
+python3 driver.py final_test.log
+> password   → KEY
+> encrypt    → ATTACK
+> decrypt    → ETTER   (ATTACK + KEY = ETTER? No...)
+```
+Let me check: ATTACK + KEY (cycling: K,E,Y,K,E,Y):
+- A(0)+K(10) = 10 = K
+- T(19)+E(4) = 23 = X
+- T(19)+Y(24) = 43%26 = 17 = R
+- A(0)+K(10) = 10 = K
+- C(2)+E(4) = 6 = G
+- K(10)+Y(24) = 34%26 = 8 = I
+→ ATTACK + KEY = KXRKGI ✓ and KXRKGI decrypted with KEY → ATTACK ✓
+
+Ran it in the terminal — confirmed. ✓
+
+**README written.** Covers files, how to run, commands, input rules, and notes for the TA.
+
+### End-of-Session Reflection
+
+Project complete. Final commit coming now. This was a good project — I learned a lot about subprocess management and inter-process communication through pipes. The hardest lesson was always remembering to flush. Without `sys.stdout.flush()` in the encryption program and `stdin.flush()` in the driver, everything would deadlock.
+
+The devlog took effort to keep up but it helped me organize my thinking. Looking back at my Day 1 entry, I had the right plan and it basically worked out that way.
+
+Total time across sessions: roughly 8-10 hours.
+
