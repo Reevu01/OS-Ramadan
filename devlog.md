@@ -69,3 +69,53 @@ The trickiest part will probably be the driver's subprocess/pipe management. I r
 
 Next session: implement `logger.py`.
 
+---
+
+## 2025-03-01 10:30
+
+### Thoughts So Far
+
+No new thoughts since yesterday. Ready to code.
+
+### Plan for This Session
+
+Implement `logger.py`. It is the simplest of the three programs:
+- Accept log file name as command-line argument.
+- Read lines from stdin.
+- Parse first token as action, rest as message.
+- Write `YYYY-MM-DD HH:MM [ACTION] MESSAGE` to the file.
+- Stop on `QUIT`.
+
+The tricky parts: making sure I flush after every write (so the driver gets real-time updates), and making sure the timestamp format is exactly right per the spec.
+
+### Coding Notes
+
+Started writing `logger.py`. The `datetime.now().strftime("%Y-%m-%d %H:%M")` gives me exactly what I need for the timestamp.
+
+Used `split(None, 1)` to split the line into at most two parts — first token is the action, everything after the first space is the message. That cleanly handles cases where the message contains spaces.
+
+Opened the log file in append mode (`'a'`) so if the driver is restarted, old logs are preserved.
+
+Made sure to call `f.flush()` after each write so entries appear immediately in the file rather than buffering.
+
+Tested it manually:
+
+```
+echo -e "START Logging Started.\nENCRYPT User encrypted HELLO\nQUIT" | python3 logger.py test.log
+cat test.log
+```
+
+Output:
+```
+2025-03-01 10:35 [START] Logging Started.
+2025-03-01 10:35 [ENCRYPT] User encrypted HELLO
+```
+
+Format looks correct. ✓
+
+### End-of-Session Reflection
+
+Logger is done. It was straightforward. Only thing I had to think about was the `strip()` vs `rstrip('\n')` — I want to strip the newline but preserve leading spaces in the message (though in practice the spec messages won't have them). Used `rstrip('\n')` to be safe.
+
+Next session: implement `encryption.py` with the Vigenère cipher.
+
