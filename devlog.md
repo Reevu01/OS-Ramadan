@@ -304,3 +304,59 @@ One thing I want to double-check next session: what happens if the user tries to
 
 Next session: minor polish and edge-case testing.
 
+---
+
+## 2025-03-08 16:00
+
+### Thoughts So Far
+
+After more testing I want to make sure all the edge cases are handled. The spec is specific about input validation.
+
+### Plan for This Session
+
+Test and verify these edge cases:
+1. Encrypt/decrypt before setting a password → should show an error.
+2. Numbers in input (`123`) → should be rejected.
+3. Empty string input → should be rejected.
+4. Mixed letters + numbers (`HELLO123`) → should be rejected.
+5. Password through history works correctly.
+
+### Coding Notes
+
+**Test: encrypt before password is set**
+```
+encrypt → HELLO → Result: ERROR Password not set
+```
+The encryption program returns the error, the driver prints it. ✓
+
+**Test: invalid inputs**
+```
+encrypt → 123       → Error: Input must contain only letters...
+encrypt → (empty)   → Error: Input must contain only letters...
+encrypt → HELLO123  → Error: Input must contain only letters...
+```
+All rejected correctly. ✓
+
+**Test: password from history**
+After encrypting HELLO→ZINCS, history = [HELLO, ZINCS]. Then chose `password → h → 2 (ZINCS)`.
+Verified the new passkey was ZINCS by encrypting WORLD and manually calculating `WORLD + ZINCS = VWENV`.
+
+Wait — I need to double-check this manually:
+- W(22) + Z(25) = 47%26 = 21 = V
+- O(14) + I(8)  = 22 = W
+- R(17) + N(13) = 30%26 = 4 = E
+- L(11) + C(2)  = 13 = N
+- D(3)  + S(18) = 21 = V
+
+→ VWENV. Confirmed. ✓
+
+**One cleanup I made:** noticed the error message says "Input must contain only letters (no spaces or special characters)." That covers the case where a user types "Hello World!" (with space). The spec says "There should be only letters in the input" — my message is clear about that.
+
+**Note on logging passwords:** The spec says "Passwords are never directly logged." My implementation sends `PASSKEY` log entry with just "Password updated." — the actual passkey value never goes in the log. ✓
+
+### End-of-Session Reflection
+
+All edge cases pass. The code is solid. Next session I will write the README and do one final review before the due date.
+
+Next session: write README.md, final devlog entry, double-check everything.
+
