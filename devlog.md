@@ -171,3 +171,64 @@ Encryption program is done. The cipher math was not bad once I worked through th
 
 Next session: start the driver program. This will be the hardest part — launching subprocesses with `subprocess.Popen`, connecting the pipes, and building the interactive menu.
 
+---
+
+## 2025-03-04 15:20
+
+### Thoughts So Far
+
+I have been thinking about how the driver connects to the subprocesses. The key insight is:
+- The **logger** only needs its stdin connected (the driver writes to it; the logger writes to a file, not to the driver).
+- The **encryption program** needs both stdin and stdout connected (the driver sends commands and reads results).
+
+So:
+- `logger_proc = Popen(["python3", "logger.py", logfile], stdin=PIPE, text=True)`
+- `enc_proc = Popen(["python3", "encryption.py"], stdin=PIPE, stdout=PIPE, text=True)`
+
+The `text=True` flag makes the streams work with strings instead of bytes — much easier.
+
+### Plan for This Session
+
+Build the complete `driver.py`:
+1. Launch logger and encryption as subprocesses with the right pipes.
+2. Log `START` on startup.
+3. Build the main command loop: `password`, `encrypt`, `decrypt`, `history`, `quit`.
+4. Implement `history` as an in-memory list — all strings entered/produced by encrypt/decrypt (but NOT passwords).
+5. On `quit`, send `QUIT` to both child processes and wait for them to terminate.
+
+### Coding Notes
+
+**Subprocess setup** worked on the first try. The key was passing `text=True` so I can use `.write(str)` and `.readline()` instead of dealing with bytes.
+
+**Flush is critical.** Every time I write to a pipe, I need to flush. Otherwise the data stays in the buffer and the child process never sees it. I call `.flush()` after every `.write()`.
+
+**`send_to_enc`** function: writes the command + newline, flushes, then reads one response line. This is a simple request/response pattern — send one line, get one line back.
+
+**Input validation** in the driver: `only_letters(s)` checks `s.isalpha()`. This rejects spaces, digits, punctuation. The error message explains what went wrong.
+
+**History logic:**
+- `password` command: user picks from history OR enters new. Password is **never** added to history.
+- `encrypt`/`decrypt` command: if entering a new string, it IS added to history. The result is also added to history. If picking from history, the item is already there.
+
+**Shutdown sequence:**
+1. Log `QUIT`.
+2. Send `QUIT` to the encryption program and wait for readline (it won't respond, so I just close its stdin).
+3. Send `QUIT` to the logger via its stdin.
+4. Close both stdin pipes.
+5. Call `.wait()` on both processes so they clean up before the driver exits.
+
+Quick test — just `quit`:
+```
+echo "quit" | python3 driver.py test.log
+```
+Output: `Goodbye!`
+Log file: `2025-03-04 15:31 [START] Driver started.` and `2025-03-04 15:31 [QUIT] Driver exiting.`
+
+It works! ✓
+
+### End-of-Session Reflection
+
+Got the skeleton of the driver running. The subprocess setup was easier than I expected once I understood `text=True`. Tomorrow I will do a full end-to-end test: set a password, encrypt something, decrypt it back, check history, then quit.
+
+Next session: full end-to-end testing of the driver.
+
